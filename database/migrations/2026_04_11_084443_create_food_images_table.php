@@ -1,0 +1,16 @@
+<?php
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration {
+    public function up() {
+        Schema::create('food_images', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('food_item_id')->constrained()->onDelete('cascade');
+            $table->string('image_path'); // Stores the URL/path of the 3 different angles
+            $table->timestamps();
+        });
+    }
+    public function down() { Schema::dropIfExists('food_images'); }
+};
