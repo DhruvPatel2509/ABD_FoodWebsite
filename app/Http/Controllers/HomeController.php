@@ -19,7 +19,7 @@ class HomeController extends Controller
         }
 
         if (Schema::hasTable('food_items')) {
-            // ✅ load images
+            // Eager loading images - accessor handles the /images/products/ path
             $featured = FoodItem::with('images')
                 ->where('is_featured', 1)
                 ->take(8)
@@ -31,8 +31,7 @@ class HomeController extends Controller
 
     public function show($slug)
     {
-        // ✅ already correct
-        $product = FoodItem::with('images', 'category')
+        $product = FoodItem::with(['images', 'category'])
             ->where('slug', $slug)
             ->firstOrFail();
 
@@ -47,13 +46,11 @@ class HomeController extends Controller
         $minPrice = $request->input('min_price');
         $maxPrice = $request->input('max_price');
 
-        // ✅ MAIN FIX: eager load nested relation
+        // Eager load nested images relation
         $categories = Category::with(['foodItems.images'])
-
             ->when($categoryId, function ($q) use ($categoryId) {
                 return $q->where('id', $categoryId);
             })
-
             ->whereHas('foodItems', function ($subQ) use ($query, $minPrice, $maxPrice) {
                 if ($query) {
                     $subQ->where('name', 'LIKE', '%' . $query . '%');
@@ -65,12 +62,10 @@ class HomeController extends Controller
                     $subQ->where('price', '<=', $maxPrice);
                 }
             })
-
             ->get();
 
-        // ✅ Apply filters + sorting safely
+        // Apply filters + sorting to the loaded collections
         $categories->each(function ($category) use ($query, $sortPrice, $minPrice, $maxPrice) {
-
             $items = $category->foodItems;
 
             if ($query) {
@@ -103,7 +98,7 @@ class HomeController extends Controller
     {
         $query = $request->q;
 
-        // ✅ FIX: remove image column, use relation
+        // Returns JSON with images relation included
         return FoodItem::with('images')
             ->where('name', 'LIKE', "%$query%")
             ->limit(10)

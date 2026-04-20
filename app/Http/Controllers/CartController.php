@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\FoodItem;
 use App\Models\Order;
 use App\Models\Coupon;
+use App\Models\OrderItem;
 use Illuminate\Support\Facades\Auth;
 
 class CartController extends Controller
@@ -16,26 +17,32 @@ class CartController extends Controller
         return view('cart');
     }
 
-    // ➕ Add to Cart (AJAX READY ✅)
+    // ➕ Add to Cart (Updated to use Product Image Path)
     public function addToCart($id)
     {
-        $product = FoodItem::findOrFail($id);
+        // Eager load images to avoid multiple database queries
+        $product = FoodItem::with('images')->findOrFail($id);
         $cart = session()->get('cart', []);
 
         if (isset($cart[$id])) {
             $cart[$id]['quantity']++;
         } else {
+            /** * FIX: We use $product->image_url.
+             * This accessor (in the FoodItem model) logic:
+             * 1. Looks at the 'images' relationship.
+             * 2. Grabs the first FoodImage.
+             * 3. Returns the path from /images/products/.
+             */
             $cart[$id] = [
                 "name" => $product->name,
                 "quantity" => 1,
                 "price" => $product->price,
-                "image" => optional($product->images()->first())->image_path
+                "image" => $product->image_url // Pulls from food_images table
             ];
         }
 
         session()->put('cart', $cart);
 
-        // ✅ AJAX REQUEST HANDLE
         if (request()->ajax()) {
             return response()->json([
                 'success' => true,
@@ -44,8 +51,7 @@ class CartController extends Controller
             ]);
         }
 
-        // Normal fallback
-        return redirect()->back()->with('success', 'Dish added to your ABD cart!');
+        return redirect()->back()->with('success', 'Dish added to your cart!');
     }
 
     // 🔄 Update Quantity (+ / −)
@@ -57,8 +63,7 @@ class CartController extends Controller
             return response()->json(['success' => false], 404);
         }
 
-        $delta = $request->delta ?? 0;
-
+        $delta = (int) ($request->delta ?? 0);
         $cart[$id]['quantity'] += $delta;
 
         if ($cart[$id]['quantity'] <= 0) {
@@ -101,27 +106,26 @@ class CartController extends Controller
         }
 
         $total = 0;
-
         foreach ($cart as $item) {
             $total += $item['price'] * $item['quantity'];
         }
 
+        // Coupon Logic
         $discount_amount = 0;
         $coupon_code = null;
 
         if (session()->has('coupon')) {
             $coupon = session('coupon');
             $coupon_code = $coupon['code'];
-            
-            if ($coupon['type'] === 'percent') {
-                $discount_amount = ($total * $coupon['value']) / 100;
-            } else {
-                $discount_amount = $coupon['value'];
-            }
+
+            $discount_amount = ($coupon['type'] === 'percent')
+                ? ($total * $coupon['value']) / 100
+                : $coupon['value'];
         }
 
         $final_total = max(0, $total - $discount_amount);
 
+        // Create Order
         $order = Order::create([
             'user_id' => Auth::id(),
             'total_amount' => $final_total,
@@ -134,9 +138,9 @@ class CartController extends Controller
             'discount_amount' => $discount_amount,
         ]);
 
-        // ✅ Save specific order items
+        // Save Order Items
         foreach ($cart as $id => $item) {
-            \App\Models\OrderItem::create([
+            OrderItem::create([
                 'order_id' => $order->id,
                 'food_item_id' => $id,
                 'food_name' => $item['name'],
@@ -145,13 +149,13 @@ class CartController extends Controller
             ]);
         }
 
-        session()->forget('cart');
+        session()->forget(['cart', 'coupon']);
 
         return redirect()->route('order.track', $order->id)
-            ->with('success', 'ABD Order Placed Successfully! 🍽️');
+            ->with('success', 'Order Placed Successfully! 🍽️');
     }
 
-    // 💳 CHECKOUT VIEW
+    // 💳 Checkout View
     public function checkout()
     {
         return view('checkout');
@@ -163,8 +167,8 @@ class CartController extends Controller
         $request->validate(['coupon_code' => 'required']);
 
         $coupon = Coupon::where('code', strtoupper($request->coupon_code))
-                        ->where('is_active', true)
-                        ->first();
+            ->where('is_active', true)
+            ->first();
 
         if (!$coupon) {
             return back()->with('error', 'Invalid or expired coupon code!');
@@ -186,11 +190,10 @@ class CartController extends Controller
         return back()->with('success', 'Coupon removed!');
     }
 
-    // 📊 CART DATA (FOR STICKY CART)
+    // 📊 Cart Metadata (Total/Count)
     public function cartData()
     {
         $cart = session('cart', []);
-
         $total = 0;
         $count = 0;
 
@@ -199,13 +202,10 @@ class CartController extends Controller
             $count += $item['quantity'];
         }
 
-        return response()->json([
-            'count' => $count,
-            'total' => $total
-        ]);
+        return response()->json(['count' => $count, 'total' => $total]);
     }
 
-    // 🛒 CART ITEMS (FOR DRAWER)
+    // 🛒 Cart Items List
     public function cartItems()
     {
         return response()->json(session('cart', []));

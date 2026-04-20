@@ -9,20 +9,22 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
+use Illuminate\Support\Facades\File;
 
 class ProductsController extends Controller
 {
+    // Path constant for easy maintenance
+    private const PRODUCT_IMAGE_PATH = 'images/products/';
+
     public function allProducts(): View
     {
         $products = FoodItem::with(['category', 'images'])->latest()->get();
-
         return view('admin.product', compact('products'));
     }
 
     public function create(): View
     {
         $categories = Category::where('status', 'active')->orderBy('name')->get();
-
         return view('admin.createProducts', compact('categories'));
     }
 
@@ -53,80 +55,35 @@ class ProductsController extends Controller
             'original_price' => $pricing['original_price'],
             'availability' => $validated['availability'],
             'discount_percent' => $pricing['discount_percent'],
-            'image' => null,
+            'image' => null, // Will be updated below
         ]);
 
         if ($request->hasFile('images')) {
-            $firstImagePath = null;
+            $firstImageName = null;
 
             foreach ($request->file('images') as $file) {
-                $name = time() . '_' . uniqid() . '.' . $file->extension();
-                $file->move(public_path('uploads/products'), $name);
-                $storedPath = 'uploads/products/' . $name;
+                $imageName = time() . '_' . Str::random(5) . '.' . $file->extension();
 
-                $firstImagePath ??= $storedPath;
+                // Move to public/images/products/
+                $file->move(public_path(self::PRODUCT_IMAGE_PATH), $imageName);
+
+                $firstImageName ??= $imageName;
 
                 FoodImage::create([
                     'food_item_id' => $product->id,
-                    'image_path' => $storedPath,
+                    'image_path' => $imageName, // Only store the filename
                 ]);
             }
 
-            $product->update(['image' => $firstImagePath]);
+            $product->update(['image' => $firstImageName]);
         }
 
         return redirect('/admin/products')->with('success', 'Product and images added successfully!');
     }
 
-    public function deleteProduct(int $id): RedirectResponse
-    {
-        $product = FoodItem::with('images')->find($id);
-
-        if (!$product) {
-            return redirect('/admin/products')->with('error', 'Product not found!');
-        }
-
-        try {
-            $imagePaths = $product->images->pluck('image_path')->all();
-            $mainImage = $product->image;
-
-            $product->delete();
-
-            foreach ($imagePaths as $path) {
-                if ($path && !str_starts_with($path, 'http') && file_exists(public_path($path))) {
-                    unlink(public_path($path));
-                }
-            }
-
-            if ($mainImage && !str_starts_with($mainImage, 'http') && file_exists(public_path($mainImage))) {
-                unlink(public_path($mainImage));
-            }
-
-            return redirect('/admin/products')->with('success', 'Product and images deleted successfully!');
-        } catch (\Illuminate\Database\QueryException $e) {
-            return redirect('/admin/products')->with('error', 'Cannot delete! This product is linked to existing customer orders. Try marking it as "Out of Stock" instead.');
-        }
-    }
-
-    public function editProduct(int $id): View|RedirectResponse
-    {
-        $product = FoodItem::with('images')->find($id);
-        $categories = Category::where('status', 'active')->orderBy('name')->get();
-
-        if (!$product) {
-            return redirect('/admin/products')->with('error', 'Product not found!');
-        }
-
-        return view('admin.editProduct', compact('product', 'categories'));
-    }
-
     public function updateProduct(Request $request, int $id): RedirectResponse
     {
-        $product = FoodItem::find($id);
-
-        if (!$product) {
-            return redirect('/admin/products')->with('error', 'Product not found!');
-        }
+        $product = FoodItem::findOrFail($id);
 
         $validated = $request->validate([
             'category_id' => ['required', 'exists:categories,id'],
@@ -156,63 +113,91 @@ class ProductsController extends Controller
         ]);
 
         if ($request->hasFile('images')) {
-            $firstNewImagePath = null;
+            $firstNewImageName = null;
 
             foreach ($request->file('images') as $file) {
-                $name = time() . '_' . uniqid() . '.' . $file->extension();
-                $file->move(public_path('uploads/products'), $name);
-                $storedPath = 'uploads/products/' . $name;
+                $imageName = time() . '_' . Str::random(5) . '.' . $file->extension();
+                $file->move(public_path(self::PRODUCT_IMAGE_PATH), $imageName);
 
-                $firstNewImagePath ??= $storedPath;
+                $firstNewImageName ??= $imageName;
 
                 FoodImage::create([
                     'food_item_id' => $product->id,
-                    'image_path' => $storedPath,
+                    'image_path' => $imageName,
                 ]);
             }
 
-            if ($firstNewImagePath && !$product->image) {
-                $product->update(['image' => $firstNewImagePath]);
+            // If product didn't have a main image set, set it to the first new one
+            if (!$product->image) {
+                $product->update(['image' => $firstNewImageName]);
             }
         }
 
         return redirect('/admin/products')->with('success', 'Product updated successfully!');
     }
 
+    public function deleteProduct(int $id): RedirectResponse
+    {
+        $product = FoodItem::with('images')->findOrFail($id);
+
+        try {
+            // Delete all associated files first
+            foreach ($product->images as $img) {
+                $this->removePhysicalFile($img->image_path);
+            }
+
+            // Delete the main thumbnail if it's different/standalone
+            $this->removePhysicalFile($product->image);
+
+            $product->delete(); // This should also cascade delete FoodImages if set in DB
+
+            return redirect('/admin/products')->with('success', 'Product deleted successfully!');
+        } catch (\Exception $e) {
+            return redirect('/admin/products')->with('error', 'Cannot delete product! It may be linked to active orders.');
+        }
+    }
+
     public function deleteImage(int $id): RedirectResponse
     {
-        $image = FoodImage::find($id);
-
-        if (!$image) {
-            return redirect()->back()->with('error', 'Image not found!');
-        }
-
+        $image = FoodImage::findOrFail($id);
         $foodItem = $image->foodItem;
-        $imagePath = $image->image_path;
+        $fileName = $image->image_path;
 
-        if ($imagePath && !str_starts_with($imagePath, 'http') && file_exists(public_path($imagePath))) {
-            unlink(public_path($imagePath));
-        }
-
+        $this->removePhysicalFile($fileName);
         $image->delete();
 
-        if ($foodItem && $foodItem->image === $imagePath) {
+        // If we deleted the image that was set as the main thumbnail, update it to the next available one
+        if ($foodItem && $foodItem->image === $fileName) {
+            $nextImage = $foodItem->images()->first();
             $foodItem->update([
-                'image' => optional($foodItem->images()->first())->image_path,
+                'image' => $nextImage ? $nextImage->image_path : null,
             ]);
         }
 
         return redirect()->back()->with('success', 'Image removed!');
     }
 
+    /**
+     * Helper to clean up files from public/images/products/
+     */
+    private function removePhysicalFile(?string $fileName): void
+    {
+        if ($fileName && !str_starts_with($fileName, 'http')) {
+            $fullPath = public_path(self::PRODUCT_IMAGE_PATH . $fileName);
+            if (File::exists($fullPath)) {
+                File::delete($fullPath);
+            }
+        }
+    }
+
+    // --- Pricing and Slug logic remains the same ---
+
     private function resolvePricing(float $enteredPrice, int $discountPercent): array
     {
         $originalPrice = round($enteredPrice, 2);
-        $currentPrice = $originalPrice;
-
-        if ($discountPercent > 0) {
-            $currentPrice = round($originalPrice * ((100 - $discountPercent) / 100), 2);
-        }
+        $currentPrice = ($discountPercent > 0)
+            ? round($originalPrice * ((100 - $discountPercent) / 100), 2)
+            : $originalPrice;
 
         return [
             'price' => $currentPrice,
@@ -226,17 +211,16 @@ class ProductsController extends Controller
         $slug = Str::slug($name);
         $baseSlug = $slug;
         $count = 1;
-
-        while (
-            FoodItem::query()
-                ->when($ignoreId, fn ($query) => $query->where('id', '!=', $ignoreId))
-                ->where('slug', $slug)
-                ->exists()
-        ) {
-            $slug = $baseSlug . '-' . $count;
-            $count++;
+        while (FoodItem::where('slug', $slug)->when($ignoreId, fn($q) => $q->where('id', '!=', $ignoreId))->exists()) {
+            $slug = $baseSlug . '-' . $count++;
         }
-
         return $slug;
+    }
+
+    public function editProduct(int $id): View
+    {
+        $product = FoodItem::with('images')->findOrFail($id);
+        $categories = Category::where('status', 'active')->orderBy('name')->get();
+        return view('admin.editProduct', compact('product', 'categories'));
     }
 }

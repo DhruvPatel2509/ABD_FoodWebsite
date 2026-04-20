@@ -89,8 +89,9 @@
                             <td class="px-4 py-3 text-sm text-slate-700">{{ $loop->iteration }}</td>
 
                             <td class="px-4 py-3">
-                                <img src="{{ $cat->image_url ?? 'https://via.placeholder.com/80x80?text=No+Image' }}" alt="{{ $cat->cat_name }}"
+                                <img src="{{ $cat->image_url }}" alt="{{ $cat->cat_name }}"
                                     class="h-14 w-14 rounded-lg object-cover ring-1 ring-slate-200">
+
                             </td>
 
                             <td class="px-4 py-3 text-sm font-semibold text-slate-800">{{ $cat->cat_name }}</td>
@@ -127,19 +128,19 @@
                                         </svg>
                                     </a>
                                     <!-- <a href="/admin/categories/delete/{{ $cat->id }}"
-                                                onclick="return confirm('Are you sure you want to delete this category?')"
-                                                class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700 focus:outline-none focus:ring-2 focus:ring-rose-500/30"
-                                                aria-label="Delete category" title="Delete">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none"
-                                                    stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                                    stroke-linejoin="round" aria-hidden="true">
-                                                    <path d="M3 6h18" />
-                                                    <path d="M8 6V4h8v2" />
-                                                    <path d="M19 6l-1 14H6L5 6" />
-                                                    <path d="M10 11v6" />
-                                                    <path d="M14 11v6" />
-                                                </svg>
-                                            </a> -->
+                                                                                                                    onclick="return confirm('Are you sure you want to delete this category?')"
+                                                                                                                    class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700 focus:outline-none focus:ring-2 focus:ring-rose-500/30"
+                                                                                                                    aria-label="Delete category" title="Delete">
+                                                                                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none"
+                                                                                                                        stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                                                                                                        stroke-linejoin="round" aria-hidden="true">
+                                                                                                                        <path d="M3 6h18" />
+                                                                                                                        <path d="M8 6V4h8v2" />
+                                                                                                                        <path d="M19 6l-1 14H6L5 6" />
+                                                                                                                        <path d="M10 11v6" />
+                                                                                                                        <path d="M14 11v6" />
+                                                                                                                    </svg>
+                                                                                                                </a> -->
                                 </div>
                             </td>
                         </tr>

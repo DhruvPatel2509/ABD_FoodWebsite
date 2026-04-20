@@ -26,18 +26,24 @@ class Category extends Model
         $this->attributes['name'] = $value;
     }
 
-    public function getImageUrlAttribute(): ?string
+    // app/Models/Category.php
+
+    public function getImageUrlAttribute(): string
     {
         $image = $this->image;
 
+        // 1. If no image is set, return a placeholder
         if (!$image) {
-            return null;
+            return asset('images/categories/default.png');
         }
 
+        // 2. If it's already a full URL (like an external link), return it as is
         if (str_starts_with($image, 'http://') || str_starts_with($image, 'https://')) {
             return $image;
         }
 
-        return asset($image);
+        // 3. NEW LOGIC: Prepend your specific category path
+        // This turns "pizza.jpg" into "http://yourdomain.com/images/categories/pizza.jpg"
+        return asset('images/categories/' . $image);
     }
 }

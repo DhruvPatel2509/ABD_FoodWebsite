@@ -7,10 +7,14 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\File;
 use Illuminate\View\View;
 
 class ProfileController extends Controller
 {
+    // Path constant for consistency
+    private const AVATAR_PATH = 'images/avatars/';
+
     /**
      * Display the user's profile form.
      */
@@ -26,20 +30,34 @@ class ProfileController extends Controller
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
-        $request->user()->fill($request->validated());
+        $user = $request->user();
+        $user->fill($request->validated());
 
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
+        if ($user->isDirty('email')) {
+            $user->email_verified_at = null;
         }
 
         if ($request->hasFile('avatar')) {
+            // 1. Delete old avatar if it exists
+            if ($user->avatar) {
+                $oldPath = public_path(self::AVATAR_PATH . $user->avatar);
+                if (File::exists($oldPath)) {
+                    File::delete($oldPath);
+                }
+            }
+
+            // 2. Process new avatar
             $file = $request->file('avatar');
-            $filename = time() . '_' . $file->getClientOriginalName();
-            $file->move(public_path('images/avatars'), $filename);
-            $request->user()->avatar = 'images/avatars/' . $filename;
+            $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+
+            // Move to public/images/avatars/
+            $file->move(public_path(self::AVATAR_PATH), $filename);
+
+            // 3. Save only the filename
+            $user->avatar = $filename;
         }
 
-        $request->user()->save();
+        $user->save();
 
         return Redirect::route('profile.edit')->with('status', 'profile-updated');
     }
@@ -54,6 +72,14 @@ class ProfileController extends Controller
         ]);
 
         $user = $request->user();
+
+        // Optional: Delete the avatar file when account is deleted
+        if ($user->avatar) {
+            $path = public_path(self::AVATAR_PATH . $user->avatar);
+            if (File::exists($path)) {
+                File::delete($path);
+            }
+        }
 
         Auth::logout();
 

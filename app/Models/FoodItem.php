@@ -38,18 +38,27 @@ class FoodItem extends Model
         return $this->hasMany(FoodImage::class);
     }
 
-    public function getImageUrlAttribute(): ?string
+    /**
+     * Accessor for the main product image URL.
+     * Maps to /images/products/
+     */
+    /**
+     * Accessor for the main product image URL.
+     * Pulls the FIRST image from the related FoodImage model.
+     */
+    public function getImageUrlAttribute(): string
     {
-        $image = $this->image;
+        // 1. Get the first record from the 'images' relationship (FoodImage model)
+        $firstImageRecord = $this->images->first();
 
-        if (!$image) {
-            return null;
+        // 2. If a record exists in the food_images table
+        if ($firstImageRecord) {
+            // We call 'image_url' which is the accessor we defined in FoodImage model
+            // That accessor already handles the '/images/products/' pathing
+            return $firstImageRecord->image_url;
         }
 
-        if (str_starts_with($image, 'http://') || str_starts_with($image, 'https://')) {
-            return $image;
-        }
-
-        return asset($image);
+        // 3. Fallback if no images are found in the gallery at all
+        return asset('images/products/default-food.png');
     }
 }

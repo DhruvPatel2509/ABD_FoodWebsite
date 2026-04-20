@@ -7,9 +7,13 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
+use Illuminate\Support\Facades\File;
 
 class CategoryController extends Controller
 {
+    // Path constant for easy maintenance
+    private const IMAGE_PATH = 'images/categories/';
+
     public function show(string $slug): View
     {
         $category = Category::with('foodItems')->where('slug', $slug)->firstOrFail();
@@ -21,7 +25,6 @@ class CategoryController extends Controller
     public function allCategories(): View
     {
         $categories = Category::latest()->get();
-
         return view('admin.categories', compact('categories'));
     }
 
@@ -29,53 +32,26 @@ class CategoryController extends Controller
     {
         $validated = $request->validate([
             'cat_name' => ['required', 'string', 'max:255'],
-            'image' => ['nullable', 'image', 'max:2048'],
+            'image' => ['nullable', 'image', 'max:5020'],
             'status' => ['required', 'in:active,inactive'],
         ]);
 
-        $imagePath = null;
+        $imageName = null;
 
         if ($request->hasFile('image')) {
-            $imageName = time() . '.' . $request->file('image')->extension();
-            $request->file('image')->move(public_path('uploads'), $imageName);
-            $imagePath = 'uploads/' . $imageName;
+            $imageName = time() . '-' . Str::random(5) . '.' . $request->file('image')->extension();
+            // Moves to public/images/categories/
+            $request->file('image')->move(public_path(self::IMAGE_PATH), $imageName);
         }
 
         Category::create([
             'name' => $validated['cat_name'],
             'slug' => $this->uniqueSlug($validated['cat_name']),
-            'image' => $imagePath,
+            'image' => $imageName, // Only store the filename
             'status' => $validated['status'],
         ]);
 
-        return redirect('/admin/categories')->with('success', 'Saved!');
-    }
-
-    public function deleteCategory(int $id): RedirectResponse
-    {
-        $category = Category::findOrFail($id);
-
-        if ($category->image && !str_starts_with($category->image, 'http') && file_exists(public_path($category->image))) {
-            unlink(public_path($category->image));
-        }
-
-        $category->delete();
-
-        return redirect('/admin/categories')->with('success', 'Category deleted successfully!');
-    }
-
-    public function editCategory(int $id): View
-    {
-        $category = Category::findOrFail($id);
-
-        return view('admin.editCategories', compact('category'));
-    }
-
-    public function showCategory(int $id): View
-    {
-        $category = Category::findOrFail($id);
-
-        return view('admin.showCategory', compact('category'));
+        return redirect('/admin/categories')->with('success', 'Category Saved!');
     }
 
     public function updateCategory(Request $request, int $id): RedirectResponse
@@ -84,7 +60,7 @@ class CategoryController extends Controller
 
         $validated = $request->validate([
             'cat_name' => ['required', 'string', 'max:255'],
-            'image' => ['nullable', 'image', 'max:2048'],
+            'image' => ['nullable', 'image', 'max:5120'],
             'status' => ['required', 'in:active,inactive'],
         ]);
 
@@ -93,18 +69,54 @@ class CategoryController extends Controller
         $category->status = $validated['status'];
 
         if ($request->hasFile('image')) {
-            if ($category->image && !str_starts_with($category->image, 'http') && file_exists(public_path($category->image))) {
-                unlink(public_path($category->image));
-            }
+            // Delete old image if it exists
+            $this->deleteOldImage($category->image);
 
-            $imageName = time() . '.' . $request->file('image')->extension();
-            $request->file('image')->move(public_path('uploads'), $imageName);
-            $category->image = 'uploads/' . $imageName;
+            $imageName = time() . '-' . Str::random(5) . '.' . $request->file('image')->extension();
+            $request->file('image')->move(public_path(self::IMAGE_PATH), $imageName);
+            $category->image = $imageName;
         }
 
         $category->save();
 
         return redirect('/admin/categories')->with('success', 'Category Updated Successfully!');
+    }
+
+    public function deleteCategory(int $id): RedirectResponse
+    {
+        $category = Category::findOrFail($id);
+
+        $this->deleteOldImage($category->image);
+        $category->delete();
+
+        return redirect('/admin/categories')->with('success', 'Category deleted successfully!');
+    }
+
+    /**
+     * Helper to handle file cleanup
+     */
+    private function deleteOldImage(?string $fileName): void
+    {
+        if ($fileName) {
+            $fullPath = public_path(self::IMAGE_PATH . $fileName);
+            if (File::exists($fullPath)) {
+                File::delete($fullPath);
+            }
+        }
+    }
+
+    // --- Standard Methods Remaining ---
+
+    public function editCategory(int $id): View
+    {
+        $category = Category::findOrFail($id);
+        return view('admin.editCategories', compact('category'));
+    }
+
+    public function showCategory(int $id): View
+    {
+        $category = Category::findOrFail($id);
+        return view('admin.showCategory', compact('category'));
     }
 
     private function uniqueSlug(string $name, ?int $ignoreId = null): string
@@ -114,9 +126,8 @@ class CategoryController extends Controller
         $count = 1;
 
         while (
-            Category::query()
-                ->when($ignoreId, fn ($query) => $query->where('id', '!=', $ignoreId))
-                ->where('slug', $slug)
+            Category::where('slug', $slug)
+                ->when($ignoreId, fn($q) => $q->where('id', '!=', $ignoreId))
                 ->exists()
         ) {
             $slug = $baseSlug . '-' . $count;
