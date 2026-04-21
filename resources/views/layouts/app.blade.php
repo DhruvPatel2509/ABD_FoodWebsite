@@ -81,9 +81,32 @@
             background: #fff2eb;
         }
 
+        .search-item-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .search-item-name {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .search-item-price {
+            font-size: 13px;
+        }
+
         .highlight {
             color: #fc8019;
             font-weight: 600;
+        }
+
+        .search-bar input::placeholder {
+            color: #999;
+        }
+
+        .search-bar input:focus {
+            outline: none;
         }
 
         .nav-link-custom {
@@ -156,10 +179,15 @@
             </div>
 
             <div class="search-wrapper d-none d-md-block" style="position:relative;">
-                <div class="search-bar">
-                    <i class="fa fa-search me-2 text-muted"></i>
-                    <input type="text" id="search-input" placeholder="Search for dishes...">
-                </div>
+                <form action="{{ route('full.menu') }}" method="GET" class="search-bar">
+                    <i class="fa fa-search text-muted"></i>
+                    <input type="text" id="search-input" name="q" placeholder="Search for dishes..." autocomplete="off"
+                        style="border:none; outline:none; flex:1; background:transparent; padding:0 10px;">
+                    <button type="submit" class="btn btn-sm"
+                        style="background:#fc8019; color:white; border-radius:20px; padding:4px 12px;">
+                        <i class="fa fa-arrow-right"></i>
+                    </button>
+                </form>
                 <div id="search-results"></div>
             </div>
 

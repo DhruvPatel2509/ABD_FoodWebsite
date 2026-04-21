@@ -42,7 +42,8 @@
                                         <td class="text-center">{{ $item->quantity }}</td>
                                         <td class="text-right">Rs {{ number_format($item->price, 2) }}</td>
                                         <td class="text-right item-total">Rs
-                                            {{ number_format($item->price * $item->quantity, 2) }}</td>
+                                            {{ number_format($item->price * $item->quantity, 2) }}
+                                        </td>
                                     </tr>
                                 @endforeach
                             </tbody>
@@ -64,7 +65,7 @@
 
                     <div class="status-update-section">
                         <label class="update-label">Update Status</label>
-                        <form action="{{ url('/admin/updateOrderStatus/' . $order->id) }}" method="POST">
+                        <form action="{{ url('/admin/orders/update-status/' . $order->id) }}" method="POST">
                             @csrf
                             <select name="status" class="custom-select-field">
                                 <option value="pending" {{ $order->status == 'pending' ? 'selected' : '' }}>Pending</option>

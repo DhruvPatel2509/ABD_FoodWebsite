@@ -22,9 +22,12 @@
             <div style="margin-bottom: 25px;">
                 <label style="font-weight: 700; color: var(--text-dark); display: block; margin-bottom: 10px;">Category
                     Name</label>
-                <input type="text" name="name" value="{{ $category->name }}"
+                <input type="text" name="cat_name" value="{{ old('cat_name', $category->name) }}"
                     style="width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 10px; outline: none; font-size: 14px;"
                     required>
+                @error('cat_name')
+                    <span style="color: #e11d48; font-size: 12px;">{{ $message }}</span>
+                @enderror
             </div>
 
             <div style="margin-bottom: 25px;">

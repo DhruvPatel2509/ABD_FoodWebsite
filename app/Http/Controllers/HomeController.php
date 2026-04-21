@@ -11,6 +11,11 @@ class HomeController extends Controller
 {
     public function index()
     {
+        // Redirect admin users to dashboard
+        if (auth()->check() && auth()->user()->isAdmin()) {
+            return redirect('/admin/dashboard');
+        }
+
         $categories = collect();
         $featured = collect();
 

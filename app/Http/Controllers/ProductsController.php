@@ -83,56 +83,60 @@ class ProductsController extends Controller
 
     public function updateProduct(Request $request, int $id): RedirectResponse
     {
+        // 1. Find the product or fail
         $product = FoodItem::findOrFail($id);
 
+        // 2. Validate the incoming request
         $validated = $request->validate([
             'category_id' => ['required', 'exists:categories,id'],
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
-            'price' => ['required', 'numeric', 'min:0'],
-            'availability' => ['required', 'in:available,out_of_stock'],
-            'discount_percent' => ['nullable', 'integer', 'min:0', 'max:100'],
+            'original_price' => ['required', 'numeric', 'min:0'],
+            'price' => ['required', 'numeric', 'min:0'], // This is the Selling Price
+            'is_featured' => ['nullable', 'boolean'],
             'images' => ['nullable', 'array'],
             'images.*' => ['image', 'max:4096'],
         ]);
 
-        $pricing = $this->resolvePricing(
-            (float) $validated['price'],
-            (int) ($validated['discount_percent'] ?? 0)
-        );
+        // 3. Calculate Discount Percentage automatically for the DB
+        $discountPercent = 0;
+        $orig = (float) $validated['original_price'];
+        $sell = (float) $validated['price'];
 
+        if ($orig > 0 && $orig > $sell) {
+            $discountPercent = (($orig - $sell) / $orig) * 100;
+        }
+
+        // 4. Update the FoodItem record
         $product->update([
             'category_id' => $validated['category_id'],
             'name' => $validated['name'],
-            'slug' => $this->uniqueSlug($validated['name'], $product->id),
-            'description' => $validated['description'] ?? null,
-            'price' => $pricing['price'],
-            'original_price' => $pricing['original_price'],
-            'availability' => $validated['availability'],
-            'discount_percent' => $pricing['discount_percent'],
+            'slug' => Str::slug($validated['name']),
+            'description' => $validated['description'],
+            'price' => $sell,
+            'original_price' => $orig,
+            'is_featured' => $request->has('is_featured') ? 1 : 0,
+            // REMOVED 'discount_percent' line entirely
         ]);
 
+        // 5. Handle Multiple Image Uploads
         if ($request->hasFile('images')) {
-            $firstNewImageName = null;
-
             foreach ($request->file('images') as $file) {
-                $imageName = time() . '_' . Str::random(5) . '.' . $file->extension();
-                $file->move(public_path(self::PRODUCT_IMAGE_PATH), $imageName);
+                // Generate unique name
+                $imageName = time() . '_' . Str::random(5) . '.' . $file->getClientOriginalExtension();
 
-                $firstNewImageName ??= $imageName;
+                // Move to public/images/products
+                $file->move(public_path('images/products/'), $imageName);
 
-                FoodImage::create([
-                    'food_item_id' => $product->id,
+                // Create record in the related food_images table
+                // Ensure you have a FoodImage model and relationship
+                $product->images()->create([
                     'image_path' => $imageName,
                 ]);
             }
-
-            // If product didn't have a main image set, set it to the first new one
-            if (!$product->image) {
-                $product->update(['image' => $firstNewImageName]);
-            }
         }
 
+        // 6. Redirect with Success Message
         return redirect('/admin/products')->with('success', 'Product updated successfully!');
     }
 

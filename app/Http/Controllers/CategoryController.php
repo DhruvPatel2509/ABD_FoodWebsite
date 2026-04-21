@@ -60,20 +60,31 @@ class CategoryController extends Controller
 
         $validated = $request->validate([
             'cat_name' => ['required', 'string', 'max:255'],
-            'image' => ['nullable', 'image', 'max:5120'],
+            'image' => ['nullable', 'image', 'max:5120'], // 5MB limit
             'status' => ['required', 'in:active,inactive'],
         ]);
 
+        // Update attributes
         $category->name = $validated['cat_name'];
-        $category->slug = $this->uniqueSlug($validated['cat_name'], $category->id);
         $category->status = $validated['status'];
 
-        if ($request->hasFile('image')) {
-            // Delete old image if it exists
-            $this->deleteOldImage($category->image);
+        // Ensure uniqueSlug handles the current ID to avoid "slug already taken" errors
+        $category->slug = $this->uniqueSlug($validated['cat_name'], $id);
 
-            $imageName = time() . '-' . Str::random(5) . '.' . $request->file('image')->extension();
-            $request->file('image')->move(public_path(self::IMAGE_PATH), $imageName);
+        if ($request->hasFile('image')) {
+            // 1. Delete old image
+            if ($category->image) {
+                $this->deleteOldImage($category->image);
+            }
+
+            // 2. Process new image
+            $file = $request->file('image');
+            $imageName = time() . '-' . Str::random(5) . '.' . $file->getClientOriginalExtension();
+
+            // 3. Move file
+            $file->move(public_path(self::IMAGE_PATH), $imageName);
+
+            // 4. Update model attribute
             $category->image = $imageName;
         }
 

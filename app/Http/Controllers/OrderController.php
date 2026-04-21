@@ -76,7 +76,7 @@ class OrderController extends Controller
         $order->update($validated);
 
         // Standardized redirect back to the order view
-        return redirect()->route('admin.orders.show', $order->id)
+        return redirect('/admin/viewOrder/' . $order->id)
             ->with('success', 'Order status updated successfully!');
     }
 }

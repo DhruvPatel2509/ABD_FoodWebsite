@@ -18,28 +18,28 @@ use App\Http\Controllers\Auth\SocialAuthController;
 */
 
 // 🏠 HOME & MENU
-Route::get('/', [HomeController::class, 'index'])->name('home');
-Route::get('/full-menu', [HomeController::class, 'fullMenu'])->name('full.menu');
-Route::view('/about', 'about')->name('about');
+Route::get('/', [HomeController::class, 'index'])->name('home')->middleware('prevent.admin');
+Route::get('/full-menu', [HomeController::class, 'fullMenu'])->name('full.menu')->middleware('prevent.admin');
+Route::view('/about', 'about')->name('about')->middleware('prevent.admin');
 
 // 📂 CATEGORY + FOOD
-Route::get('/category/{slug}', [CategoryController::class, 'show'])->name('category.show');
-Route::get('/food/{slug}', [HomeController::class, 'show'])->name('food.show');
+Route::get('/category/{slug}', [CategoryController::class, 'show'])->name('category.show')->middleware('prevent.admin');
+Route::get('/food/{slug}', [HomeController::class, 'show'])->name('food.show')->middleware('prevent.admin');
 
 // 🛒 CART
-Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
-Route::post('/add-to-cart/{id}', [CartController::class, 'addToCart'])->name('cart.add');
-Route::post('/cart/update/{id}', [CartController::class, 'update'])->name('cart.update');
-Route::post('/remove-from-cart', [CartController::class, 'remove'])->name('cart.remove');
-Route::get('/cart-data', [CartController::class, 'cartData']);
-Route::get('/cart-items', [CartController::class, 'cartItems']);
+Route::get('/cart', [CartController::class, 'index'])->name('cart.index')->middleware('prevent.admin');
+Route::post('/add-to-cart/{id}', [CartController::class, 'addToCart'])->name('cart.add')->middleware('prevent.admin');
+Route::post('/cart/update/{id}', [CartController::class, 'update'])->name('cart.update')->middleware('prevent.admin');
+Route::post('/remove-from-cart', [CartController::class, 'remove'])->name('cart.remove')->middleware('prevent.admin');
+Route::get('/cart-data', [CartController::class, 'cartData'])->middleware('prevent.admin');
+Route::get('/cart-items', [CartController::class, 'cartItems'])->middleware('prevent.admin');
 
 // 🔍 SEARCH (Live Dropdown + Search Page)
-Route::get('/quick-search', [HomeController::class, 'quickSearch']);
-Route::get('/search-food', [HomeController::class, 'search']);
+Route::get('/quick-search', [HomeController::class, 'quickSearch'])->middleware('prevent.admin');
+Route::get('/search-food', [HomeController::class, 'search'])->middleware('prevent.admin');
 
-// 🔐 AUTH PROTECTED
-Route::middleware(['auth'])->group(function () {
+// 🔐 AUTH PROTECTED (User only - prevent admin access)
+Route::middleware(['auth', 'prevent.admin'])->group(function () {
     // 💳 CHECKOUT
     Route::get('/checkout', [CartController::class, 'checkout'])->name('checkout');
     Route::post('/place-order', [CartController::class, 'placeOrder'])->name('order.place');
@@ -67,9 +67,9 @@ require __DIR__ . '/auth.php';
 // ==========================================
 // ADMIN PANEL ROUTES
 // ==========================================
-Route::get('/Adminlogin', [AuthController::class, 'login'])->middleware('guest')->name('admin.login');
-Route::post('/loginProcess', [AuthController::class, 'loginProcess'])->middleware('guest');
-Route::post('/signupProcess', [AuthController::class, 'signupProcess'])->middleware('guest');
+Route::get('/Adminlogin', [AuthController::class, 'login'])->middleware('logged.out')->name('admin.login');
+Route::post('/loginProcess', [AuthController::class, 'loginProcess'])->middleware('logged.out');
+Route::post('/signupProcess', [AuthController::class, 'signupProcess'])->middleware('logged.out');
 
 Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/admin/dashboard', [AdminController::class, 'dashboard']);
@@ -78,10 +78,11 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/admin/categories', [CategoryController::class, 'allCategories']);
     Route::get('/admin/categories/show/{id}', [CategoryController::class, 'showCategory']);
     Route::get('/admin/categories/create', function () {
-        return view('admin.createCategories'); });
+        return view('admin.createCategories');
+    });
     Route::post('/admin/categories/store', [CategoryController::class, 'store']);
     Route::get('/admin/categories/edit/{id}', [CategoryController::class, 'editCategory']);
-    Route::post('/admin/categories/updateCat/{id}', [CategoryController::class, 'updateCategory']);
+    Route::post('/admin/categories/update/{id}', [CategoryController::class, 'updateCategory']);
     Route::get('/admin/categories/delete/{id}', [CategoryController::class, 'deleteCategory']);
 
     // Products

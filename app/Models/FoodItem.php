@@ -22,6 +22,8 @@ class FoodItem extends Model
         'discount_percent',
     ];
 
+    protected $appends = ['image_url'];
+
     /**
      * Get the category that owns the food item.
      */
