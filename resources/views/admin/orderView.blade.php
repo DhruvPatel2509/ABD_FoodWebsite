@@ -1,153 +1,293 @@
 @extends('admin.layout')
-
 @section('title', 'Order Details')
-@section('header_title', 'Order Details')
 
 @section('content')
-    <div class="mx-auto max-w-5xl space-y-6">
-        <div class="rounded-2xl border border-red-200 bg-gradient-to-r from-red-600 via-rose-600 to-orange-500 p-6 shadow-lg">
-            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                    <h2 class="text-2xl font-semibold text-white">Order #{{ $order->id }} Details</h2>
-                    <p class="mt-1 text-sm text-slate-200">Review customer information, order items, and current status.</p>
+    <div class="order-details-wrapper">
+        <div class="order-banner">
+            <div class="banner-content">
+                <div class="header-text">
+                    <h1 class="order-id-title">Order #{{ $order->id }}</h1>
+                    <p class="order-meta">
+                        <span class="meta-label">Customer:</span> {{ $order->user->name ?? 'Guest' }}
+                        <span class="meta-divider">|</span>
+                        <span class="status-indicator-text">{{ strtoupper($order->status) }}</span>
+                    </p>
                 </div>
-                <a href="{{ url('/admin/orders') }}" class="inline-flex items-center justify-center rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 shadow-sm transition hover:bg-rose-50">
+                <a href="{{ url('/admin/orders') }}" class="btn-back-light">
                     Back to Orders
                 </a>
             </div>
         </div>
 
-        @if(session('success'))
-            <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700 shadow-sm">
-                {{ session('success') }}
+        <div class="order-grid">
+            <div class="order-items-column">
+                <div class="detail-card">
+                    <div class="card-header">
+                        Items Ordered
+                    </div>
+                    <div class="table-responsive">
+                        <table class="order-items-table">
+                            <thead>
+                                <tr>
+                                    <th>Item</th>
+                                    <th class="text-center">Qty</th>
+                                    <th class="text-right">Price</th>
+                                    <th class="text-right">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($order->items as $item)
+                                    <tr>
+                                        <td class="item-name">{{ $item->food_name }}</td>
+                                        <td class="text-center">{{ $item->quantity }}</td>
+                                        <td class="text-right">Rs {{ number_format($item->price, 2) }}</td>
+                                        <td class="text-right item-total">Rs
+                                            {{ number_format($item->price * $item->quantity, 2) }}</td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
-        @endif
 
-        <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-md">
-            <div class="grid gap-4 text-sm text-slate-700 md:grid-cols-2">
-                <p>
-                    <span class="font-semibold text-slate-500">Customer:</span>
-                    {{ $order->user->name ?? 'Guest' }}
-                </p>
+            <div class="order-summary-column">
+                <div class="detail-card summary-padding">
+                    <h5 class="summary-title">Order Summary</h5>
 
-                <p>
-                    <span class="font-semibold text-slate-500">Email:</span>
-                    {{ $order->user->email ?? 'N/A' }}
-                </p>
+                    <div class="summary-row">
+                        <span class="summary-label">Subtotal</span>
+                        <span class="summary-value">Rs {{ number_format($order->total_amount, 2) }}</span>
+                    </div>
 
-                <p>
-                    <span class="font-semibold text-slate-500">Phone:</span>
-                    {{ $order->phone }}
-                </p>
+                    <div class="summary-divider"></div>
 
-                <p>
-                    <span class="font-semibold text-slate-500">Date:</span>
-                    {{ optional($order->created_at)->format('d M Y, h:i A') ?? 'N/A' }}
-                </p>
-
-                <p class="md:col-span-2">
-                    <span class="font-semibold text-slate-500">Address:</span>
-                    {{ $order->address }}
-                </p>
-
-                <p>
-                    <span class="font-semibold text-slate-500">Payment:</span>
-                    {{ strtoupper($order->payment_method ?? 'cod') }}
-                </p>
-
-                <p>
-                    <span class="font-semibold text-slate-500">Status:</span>
-                    <span class="rounded-full px-2.5 py-1 text-xs font-semibold
-                        {{ $order->status === 'pending' ? 'bg-amber-100 text-amber-700' : '' }}
-                        {{ $order->status === 'processing' ? 'bg-orange-100 text-orange-700' : '' }}
-                        {{ $order->status === 'delivered' ? 'bg-emerald-100 text-emerald-700' : '' }}
-                        {{ $order->status === 'cancelled' ? 'bg-rose-100 text-rose-700' : '' }}">
-                        {{ ucfirst($order->status) }}
-                    </span>
-                </p>
+                    <div class="status-update-section">
+                        <label class="update-label">Update Status</label>
+                        <form action="{{ url('/admin/updateOrderStatus/' . $order->id) }}" method="POST">
+                            @csrf
+                            <select name="status" class="custom-select-field">
+                                <option value="pending" {{ $order->status == 'pending' ? 'selected' : '' }}>Pending</option>
+                                <option value="delivered" {{ $order->status == 'delivered' ? 'selected' : '' }}>Delivered
+                                </option>
+                                <option value="cancelled" {{ $order->status == 'cancelled' ? 'selected' : '' }}>Cancelled
+                                </option>
+                            </select>
+                            <button type="submit" class="btn-update-status">
+                                Update Order
+                            </button>
+                        </form>
+                    </div>
+                </div>
             </div>
-        </div>
-
-        <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-md">
-            <div class="overflow-x-auto">
-                <table class="min-w-full text-left">
-                    <thead class="bg-slate-50 text-xs uppercase tracking-wide text-slate-700">
-                        <tr>
-                            <th class="px-4 py-3">#</th>
-                            <th class="px-4 py-3">Image</th>
-                            <th class="px-4 py-3">Product</th>
-                            <th class="px-4 py-3">Price</th>
-                            <th class="px-4 py-3">Qty</th>
-                            <th class="px-4 py-3 text-right">Subtotal</th>
-                        </tr>
-                    </thead>
-
-                    <tbody class="divide-y divide-slate-100 text-sm text-slate-600">
-                        @php $grandTotal = 0; @endphp
-
-                        @foreach($order->items as $item)
-                            @php
-                                $subtotal = $item->quantity * $item->price;
-                                $grandTotal += $subtotal;
-                                $product = $item->foodItem;
-                                $previewImage = optional($product?->images->first())->image_url ?? $product?->image_url;
-                            @endphp
-
-                            <tr class="transition hover:bg-slate-50">
-                                <td class="px-4 py-3">{{ $loop->iteration }}</td>
-                                <td class="px-4 py-3">
-                                    @if($previewImage)
-                                        <img src="{{ $previewImage }}" class="h-12 w-12 rounded-lg object-cover ring-1 ring-slate-200">
-                                    @else
-                                        <span class="text-xs text-slate-400">No Image</span>
-                                    @endif
-                                </td>
-                                <td class="px-4 py-3">
-                                    <div class="font-semibold text-slate-800">
-                                        {{ $item->food_name }}
-                                    </div>
-                                    <div class="text-xs text-slate-500">
-                                        Category: {{ $product?->category?->cat_name ?? 'N/A' }}
-                                    </div>
-                                </td>
-                                <td class="px-4 py-3">Rs {{ number_format($item->price, 2) }}</td>
-                                <td class="px-4 py-3">{{ $item->quantity }}</td>
-                                <td class="px-4 py-3 text-right font-semibold text-slate-800">
-                                    Rs {{ number_format($subtotal, 2) }}
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-
-                    <tfoot>
-                        <tr class="bg-slate-50 text-base font-bold">
-                            <td colspan="5" class="px-4 py-3 text-right text-slate-700">Grand Total:</td>
-                            <td class="px-4 py-3 text-right text-emerald-600">
-                                Rs {{ number_format($grandTotal, 2) }}
-                            </td>
-                        </tr>
-                    </tfoot>
-                </table>
-            </div>
-        </div>
-
-        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-md">
-            <form action="{{ url('/admin/orders/update-status/' . $order->id) }}" method="POST" class="flex flex-col items-start gap-3 md:flex-row md:items-center">
-                @csrf
-
-                <label class="font-semibold text-slate-700">Update Status:</label>
-
-                <select name="status" class="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-rose-400 focus:ring-2 focus:ring-rose-100">
-                    <option value="pending" {{ $order->status === 'pending' ? 'selected' : '' }}>Pending</option>
-                    <option value="processing" {{ $order->status === 'processing' ? 'selected' : '' }}>Processing</option>
-                    <option value="delivered" {{ $order->status === 'delivered' ? 'selected' : '' }}>Delivered</option>
-                    <option value="cancelled" {{ $order->status === 'cancelled' ? 'selected' : '' }}>Cancelled</option>
-                </select>
-
-                <button type="submit" class="inline-flex items-center justify-center rounded-lg bg-rose-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-rose-700">
-                    Update
-                </button>
-            </form>
         </div>
     </div>
 @endsection
+
+@push('styles')
+    <style>
+        /* Main Layout */
+        .order-details-wrapper {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding-bottom: 3rem;
+        }
+
+        /* Gradient Banner */
+        .order-banner {
+            background: linear-gradient(135deg, #e11d48 0%, #fb923c 100%);
+            padding: 2rem;
+            border-radius: 1rem 1rem 0 0;
+            color: white;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .banner-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .order-id-title {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .order-meta {
+            margin: 5px 0 0 0;
+            opacity: 0.9;
+            font-size: 0.9rem;
+        }
+
+        .meta-divider {
+            margin: 0 10px;
+            opacity: 0.5;
+        }
+
+        .status-indicator-text {
+            font-weight: 800;
+            text-decoration: underline;
+        }
+
+        .btn-back-light {
+            background: white;
+            color: #e11d48;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: 700;
+            text-decoration: none;
+            font-size: 0.85rem;
+            transition: 0.3s;
+        }
+
+        /* Grid Layout */
+        .order-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 1.5rem;
+            margin-top: -1px;
+            /* Align with border of banner */
+        }
+
+        @media (max-width: 992px) {
+            .order-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Cards */
+        .detail-card {
+            background: white;
+            border-radius: 0 0 1rem 1rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+            border: 1px solid #f1f5f9;
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid #f1f5f9;
+            font-weight: 700;
+            color: #1e293b;
+        }
+
+        /* Table Styles */
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        .order-items-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .order-items-table th {
+            background: #f8fafc;
+            padding: 1rem 1.5rem;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: #64748b;
+            letter-spacing: 0.025em;
+        }
+
+        .order-items-table td {
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid #f8fafc;
+            font-size: 0.9rem;
+        }
+
+        .item-name {
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .item-total {
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        /* Summary Sidebar */
+        .summary-padding {
+            padding: 1.5rem;
+            border-radius: 0 0 1rem 1rem !important;
+        }
+
+        .summary-title {
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            color: #1e293b;
+            font-size: 1.1rem;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.75rem;
+        }
+
+        .summary-label {
+            color: #64748b;
+        }
+
+        .summary-value {
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        .summary-divider {
+            height: 1px;
+            background: #f1f5f9;
+            margin: 1.5rem 0;
+        }
+
+        /* Status Form */
+        .update-label {
+            font-weight: 700;
+            display: block;
+            margin-bottom: 0.75rem;
+            font-size: 0.9rem;
+            color: #1e293b;
+        }
+
+        .custom-select-field {
+            width: 100%;
+            border-radius: 10px;
+            padding: 0.75rem;
+            border: 1px solid #e2e8f0;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+            outline: none;
+        }
+
+        .custom-select-field:focus {
+            border-color: #e11d48;
+        }
+
+        .btn-update-status {
+            width: 100%;
+            background: #e11d48;
+            color: white;
+            border: none;
+            padding: 0.75rem;
+            border-radius: 10px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .btn-update-status:hover {
+            background: #be123c;
+            transform: translateY(-1px);
+        }
+
+        /* Utility Classes */
+        .text-center {
+            text-align: center;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+    </style>
+@endpush

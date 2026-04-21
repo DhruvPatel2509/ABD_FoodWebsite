@@ -1,130 +1,262 @@
 @extends('admin.layout')
-
-@section('title', 'Create Product')
-@section('header_title', 'Create Product')
+@section('title', 'Add Product')
 
 @section('content')
-    <div class="mx-auto max-w-3xl">
-        <div
-            class="mb-6 rounded-2xl border border-red-200 bg-gradient-to-r from-red-600 via-rose-600 to-orange-500 p-6 shadow-lg">
-            <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                    <h1 class="text-2xl font-semibold text-white">Create Product</h1>
-                    <p class="mt-1 text-sm text-slate-200">Add product details, pricing, discount, and availability.</p>
+    <div class="product-form-container">
+        <div class="form-header-banner">
+            <div class="header-content-wrapper">
+                <div class="header-text">
+                    <h1 class="header-title">Add New Product</h1>
+                    <p class="header-subtitle">Fill in the details to add a new dish to your menu.</p>
                 </div>
-                <a href="{{ url('/admin/products') }}"
-                    class="inline-flex items-center justify-center rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 shadow-sm transition hover:bg-rose-50">
-                    Back to Products
+                <a href="{{ url('/admin/products') }}" class="btn-back">
+                    Back to List
                 </a>
             </div>
         </div>
 
-        <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-md sm:p-7">
-            <form action="{{ url('/admin/products/store') }}" method="POST" enctype="multipart/form-data" class="space-y-5">
+        <div class="form-card-body">
+            <form action="{{ url('/admin/products/store') }}" method="POST" enctype="multipart/form-data">
                 @csrf
 
-                <div>
-                    <label class="mb-1.5 block text-sm font-semibold text-slate-700">Select Category</label>
-                    <select name="category_id" required
-                        class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-rose-400 focus:ring-2 focus:ring-rose-100">
-                        <option value="">-- Choose Category --</option>
-                        @foreach($categories as $cat)
-                            <option value="{{ $cat->id }}" {{ old('category_id') == $cat->id ? 'selected' : '' }}>
-                                {{ $cat->cat_name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <div>
-                    <label class="mb-1.5 block text-sm font-semibold text-slate-700">Product Name</label>
-                    <input type="text" name="name" value="{{ old('name') }}" required
-                        class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-rose-400 focus:ring-2 focus:ring-rose-100">
-                </div>
-
-                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <div>
-                        <label class="mb-1.5 block text-sm font-semibold text-slate-700">Price (₹)</label>
-                        <input type="number" name="price" value="{{ old('price') }}" required
-                            class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-rose-400 focus:ring-2 focus:ring-rose-100">
+                <div class="form-grid">
+                    <div class="form-group span-6">
+                        <label class="custom-label">Product Name</label>
+                        <input type="text" name="name" class="custom-input" placeholder="e.g. Paneer Tikka" required>
                     </div>
-                    <div>
-                        <label class="mb-1.5 block text-sm font-semibold text-slate-700">Discount (%)</label>
-                        <input type="number" name="discount_percent" value="{{ old('discount_percent', 0) }}" min="0"
-                            max="100"
-                            class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-rose-400 focus:ring-2 focus:ring-rose-100">
+
+                    <div class="form-group span-6">
+                        <label class="custom-label">Category</label>
+                        <select name="category_id" class="custom-input" required>
+                            <option value="">Select Category</option>
+                            @foreach($categories as $cat)
+                                <option value="{{ $cat->id }}">{{ $cat->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="form-group span-4">
+                        <label class="custom-label">Selling Price (Rs)</label>
+                        <input type="number" name="price" class="custom-input" placeholder="0.00" required>
+                    </div>
+
+                    <div class="form-group span-4">
+                        <label class="custom-label">Original Price (Rs)</label>
+                        <input type="number" name="original_price" class="custom-input" placeholder="0.00">
+                    </div>
+
+                    <div class="form-group span-4">
+                        <label class="custom-label">Status</label>
+                        <select name="availability" class="custom-input">
+                            <option value="available">Available</option>
+                            <option value="out_of_stock">Out of Stock</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group span-12">
+                        <label class="custom-label">Description</label>
+                        <textarea name="description" class="custom-input" rows="4"
+                            placeholder="Describe the dish..."></textarea>
+                    </div>
+
+                    <div class="form-group span-12">
+                        <label class="custom-label">Product Images (Multiple)</label>
+                        <div class="image-upload-box">
+                            <input type="file" name="images[]" class="custom-file-input" multiple>
+                            <p class="upload-hint">You can select multiple images at once.</p>
+                        </div>
                     </div>
                 </div>
 
-                <div>
-                    <label class="mb-1.5 block text-sm font-semibold text-slate-700">Description</label>
-                    <textarea name="description" rows="3"
-                        class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-rose-400 focus:ring-2 focus:ring-rose-100">{{ old('description') }}</textarea>
-                </div>
-
-                <div>
-                    <label class="mb-1.5 block text-sm font-semibold text-slate-700">Product Images</label>
-                    <input id="images" type="file" name="images[]" accept="image/*" multiple required
-                        class="w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-600 file:mr-3 file:rounded-md file:border-0 file:bg-rose-50 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-rose-700 hover:file:bg-rose-100">
-
-                    <div id="previewContainer"
-                        class="mt-3 hidden grid grid-cols-3 gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
-                    </div>
-                    <p class="mt-1 text-xs text-slate-500">You can select multiple images at once.</p>
-                </div>
-
-                <div>
-                    <label class="mb-1.5 block text-sm font-semibold text-slate-700">Availability</label>
-                    <select name="availability"
-                        class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-rose-400 focus:ring-2 focus:ring-rose-100">
-                        <option value="available" {{ old('availability', 'available') == 'available' ? 'selected' : '' }}>
-                            Available</option>
-                        <option value="out_of_stock" {{ old('availability') == 'out_of_stock' ? 'selected' : '' }}>Out of
-                            Stock</option>
-                    </select>
-                </div>
-
-                <div class="flex flex-col gap-3 pt-4 sm:flex-row sm:items-center">
-                    <button type="submit"
-                        class="inline-flex items-center justify-center rounded-lg bg-rose-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-rose-700">
+                <div class="form-footer">
+                    <button type="submit" class="btn-submit">
                         Save Product
                     </button>
-                    <a href="{{ url('/admin/products') }}"
-                        class="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-6 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
+                    <a href="{{ url('/admin/products') }}" class="btn-cancel">
                         Cancel
                     </a>
                 </div>
             </form>
         </div>
     </div>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const imagesInput = document.getElementById('images');
-            const previewContainer = document.getElementById('previewContainer');
-
-            if (!imagesInput || !previewContainer) return;
-
-            imagesInput.addEventListener('change', function (event) {
-                previewContainer.innerHTML = ''; // Clear existing
-                const files = event.target.files;
-
-                if (files.length > 0) {
-                    previewContainer.classList.remove('hidden');
-
-                    Array.from(files).forEach(file => {
-                        const reader = new FileReader();
-                        reader.onload = function (e) {
-                            const div = document.createElement('div');
-                            div.className = "h-24 w-full overflow-hidden rounded-lg border border-slate-200 bg-white";
-                            div.innerHTML = `<img src="${e.target.result}" class="h-full w-full object-cover">`;
-                            previewContainer.appendChild(div);
-                        }
-                        reader.readAsDataURL(file);
-                    });
-                } else {
-                    previewContainer.classList.add('hidden');
-                }
-            });
-        });
-    </script>
 @endsection
+
+@push('styles')
+    <style>
+        /* Layout Container */
+        .product-form-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding-bottom: 3rem;
+        }
+
+        /* Gradient Header Section */
+        .form-header-banner {
+            background: linear-gradient(135deg, #e11d48 0%, #fb923c 100%);
+            padding: 2rem;
+            border-radius: 1rem 1rem 0 0;
+            color: white;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .header-content-wrapper {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-title {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .header-subtitle {
+            margin: 5px 0 0 0;
+            opacity: 0.9;
+            font-size: 0.9rem;
+        }
+
+        .btn-back {
+            background: white;
+            color: #e11d48;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: 700;
+            text-decoration: none;
+            font-size: 0.85rem;
+            transition: 0.3s;
+        }
+
+        .btn-back:hover {
+            background: #f8fafc;
+            transform: translateY(-1px);
+        }
+
+        /* Form Card Body */
+        .form-card-body {
+            background: white;
+            padding: 2.5rem;
+            border-radius: 0 0 1rem 1rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+            border: 1px solid #f1f5f9;
+            border-top: none;
+        }
+
+        /* Grid System */
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 1.5rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .span-12 {
+            grid-column: span 12;
+        }
+
+        .span-6 {
+            grid-column: span 6;
+        }
+
+        .span-4 {
+            grid-column: span 4;
+        }
+
+        @media (max-width: 768px) {
+
+            .span-6,
+            .span-4 {
+                grid-column: span 12;
+            }
+        }
+
+        /* Input Styling */
+        .custom-label {
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+
+        .custom-input {
+            border-radius: 10px;
+            padding: 12px 15px;
+            border: 1px solid #e2e8f0;
+            font-size: 0.95rem;
+            transition: all 0.3s;
+            background: #fff;
+        }
+
+        .custom-input:focus {
+            outline: none;
+            border-color: #e11d48;
+            box-shadow: 0 0 0 4px rgba(225, 29, 72, 0.1);
+        }
+
+        /* File Upload Area */
+        .image-upload-box {
+            border: 2px dashed #e2e8f0;
+            padding: 20px;
+            border-radius: 12px;
+            background: #f8fafc;
+            text-align: center;
+        }
+
+        .custom-file-input {
+            width: 100%;
+        }
+
+        .upload-hint {
+            font-size: 0.8rem;
+            color: #64748b;
+            margin-top: 10px;
+        }
+
+        /* Action Buttons */
+        .form-footer {
+            margin-top: 2.5rem;
+            padding-top: 2rem;
+            border-top: 1px solid #f1f5f9;
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn-submit {
+            background: #e11d48;
+            color: white;
+            border: none;
+            padding: 12px 40px;
+            border-radius: 10px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(225, 29, 72, 0.2);
+            transition: 0.3s;
+        }
+
+        .btn-submit:hover {
+            background: #be123c;
+            transform: translateY(-2px);
+        }
+
+        .btn-cancel {
+            background: white;
+            color: #64748b;
+            border: 1px solid #e2e8f0;
+            padding: 12px 30px;
+            border-radius: 10px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: 0.3s;
+        }
+
+        .btn-cancel:hover {
+            background: #f8fafc;
+            color: #1e293b;
+        }
+    </style>
+@endpush

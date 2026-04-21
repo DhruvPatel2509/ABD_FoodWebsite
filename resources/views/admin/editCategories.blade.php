@@ -1,101 +1,72 @@
 @extends('admin.layout')
+@section('title', 'Edit Category')
 
 @section('content')
-
-    <div class="mx-auto max-w-3xl">
-        <div class="mb-6 rounded-2xl border border-red-200 bg-gradient-to-r from-red-600 via-rose-600 to-orange-500 p-6 shadow-lg">
-            <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                    <h1 class="text-2xl font-semibold text-white">Edit Category</h1>
-                    <p class="mt-1 text-sm text-slate-200">Update category details, image, and current status.</p>
-                </div>
-                <a href="{{ url('/admin/categories') }}"
-                    class="inline-flex items-center justify-center rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 shadow-sm transition hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-white/70 focus:ring-offset-1 focus:ring-offset-slate-800">
-                    Back to Categories
-                </a>
+    <div class="welcome-banner">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <h1 style="margin: 0; font-size: 26px;">Edit Category</h1>
+                <p style="margin: 5px 0 0 0; opacity: 0.9;">Update category details, image, and current status.</p>
             </div>
-        </div>
-
-        @if ($errors->any())
-            <div class="mb-5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 shadow-sm">
-                <p class="font-semibold">Please fix the following issues:</p>
-                <ul class="mt-2 list-disc space-y-1 pl-5">
-                    @foreach ($errors->all() as $error)
-                        <li>{{ $error }}</li>
-                    @endforeach
-                </ul>
-            </div>
-        @endif
-
-        <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-md sm:p-7">
-            <form action="{{ url('/admin/categories/updateCat/' . $category->id) }}" method="POST" enctype="multipart/form-data"
-                class="space-y-6">
-                @csrf
-
-                <div>
-                    <label for="cat_name" class="mb-1.5 block text-sm font-semibold text-slate-700">
-                        Category Name
-                    </label>
-                    <input id="cat_name" type="text" name="cat_name"
-                        value="{{ old('cat_name', $category->cat_name) }}" required
-                        placeholder="Enter category name"
-                        class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-rose-400 focus:ring-2 focus:ring-rose-100 @error('cat_name') border-rose-300 focus:border-rose-400 focus:ring-rose-100 @enderror">
-                    @error('cat_name')
-                        <p class="mt-1.5 text-xs font-medium text-rose-600">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <div>
-                    <label class="mb-2 block text-sm font-semibold text-slate-700">
-                        Current Image
-                    </label>
-
-                    <div class="mb-3 inline-block rounded-xl border border-slate-200 bg-slate-50 p-2">
-                        <img src="{{ $category->image_url ?? 'https://via.placeholder.com/160x160?text=No+Image' }}" alt="{{ $category->cat_name }}"
-                            class="h-36 w-36 rounded-lg object-cover ring-1 ring-slate-200">
-                    </div>
-
-                    <label for="image" class="mb-1.5 block text-sm font-medium text-slate-600">Replace Image (Optional)</label>
-                    <input id="image" type="file" name="image" accept="image/*"
-                        class="w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-600 file:mr-3 file:rounded-md file:border-0 file:bg-rose-50 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-rose-700 hover:file:bg-rose-100 @error('image') border-rose-300 @enderror">
-                    <p class="mt-1.5 text-xs text-slate-500">Leave empty if you do not want to change the image.</p>
-                    @error('image')
-                        <p class="mt-1.5 text-xs font-medium text-rose-600">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <div>
-                    <label for="status" class="mb-1.5 block text-sm font-semibold text-slate-700">
-                        Status
-                    </label>
-                    <select id="status" name="status"
-                        class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-rose-400 focus:ring-2 focus:ring-rose-100 @error('status') border-rose-300 focus:border-rose-400 focus:ring-rose-100 @enderror">
-
-                        <option value="active" {{ old('status', $category->status) == 'active' ? 'selected' : '' }}>
-                            Active
-                        </option>
-
-                        <option value="inactive" {{ old('status', $category->status) == 'inactive' ? 'selected' : '' }}>
-                            Inactive
-                        </option>
-                    </select>
-                    @error('status')
-                        <p class="mt-1.5 text-xs font-medium text-rose-600">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <div class="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center">
-                    <button type="submit"
-                        class="inline-flex items-center justify-center rounded-lg bg-rose-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-rose-700 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-1">
-                        Update Category
-                    </button>
-                    <a href="{{ url('/admin/categories') }}"
-                        class="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-6 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
-                        Cancel
-                    </a>
-                </div>
-            </form>
+            <a href="{{ url('/admin/categories') }}" class="btn"
+                style="background: white; color: var(--sidebar-bg); padding: 10px 20px; border-radius: 10px; font-weight: 700; text-decoration: none; font-size: 14px;">
+                Back to Categories
+            </a>
         </div>
     </div>
 
+    <div class="data-card" style="padding: 40px; max-width: 900px; margin: 0 auto;">
+        <form action="{{ url('/admin/categories/update/' . $category->id) }}" method="POST" enctype="multipart/form-data">
+            @csrf
+
+            <div style="margin-bottom: 25px;">
+                <label style="font-weight: 700; color: var(--text-dark); display: block; margin-bottom: 10px;">Category
+                    Name</label>
+                <input type="text" name="name" value="{{ $category->name }}"
+                    style="width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 10px; outline: none; font-size: 14px;"
+                    required>
+            </div>
+
+            <div style="margin-bottom: 25px;">
+                <label style="font-weight: 700; color: var(--text-dark); display: block; margin-bottom: 10px;">Current
+                    Image</label>
+                <div
+                    style="width: 150px; height: 150px; border-radius: 15px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
+                    <img src="{{ asset($category->image_url) }}" style="width: 100%; height: 100%; object-fit: cover;"
+                        onerror="this.src='{{ asset('images/default-cat.jpg') }}'">
+                </div>
+            </div>
+
+            <div style="margin-bottom: 25px;">
+                <label style="font-weight: 700; color: var(--text-dark); display: block; margin-bottom: 10px;">Replace Image
+                    (Optional)</label>
+                <div style="border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px; background: #fcfcfc;">
+                    <input type="file" name="image" style="font-size: 14px; color: var(--text-muted);">
+                </div>
+                <small style="color: var(--text-muted); display: block; margin-top: 8px;">Leave empty if you do not want to
+                    change the image.</small>
+            </div>
+
+            <div style="margin-bottom: 35px;">
+                <label
+                    style="font-weight: 700; color: var(--text-dark); display: block; margin-bottom: 10px;">Status</label>
+                <select name="status"
+                    style="width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 10px; outline: none; background: white; font-size: 14px;">
+                    <option value="active" {{ $category->status == 'active' ? 'selected' : '' }}>Active</option>
+                    <option value="inactive" {{ $category->status == 'inactive' ? 'selected' : '' }}>Inactive</option>
+                </select>
+            </div>
+
+            <div style="display: flex; gap: 15px;">
+                <button type="submit"
+                    style="background: #e11d48; color: white; border: none; padding: 12px 30px; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 14px;">
+                    Update Category
+                </button>
+                <a href="{{ url('/admin/categories') }}"
+                    style="background: white; color: var(--text-dark); border: 1px solid #e2e8f0; padding: 12px 30px; border-radius: 10px; font-weight: 600; text-decoration: none; font-size: 14px; text-align: center;">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
 @endsection

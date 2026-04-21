@@ -1,72 +1,49 @@
 @extends('admin.layout')
-
 @section('title', 'Users')
-@section('header_title', 'Users')
 
 @section('content')
-    <div class="mb-6 rounded-2xl border border-red-200 bg-gradient-to-r from-red-600 via-rose-600 to-orange-500 p-6 shadow-lg">
-        <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div>
-                <h1 class="text-2xl font-semibold text-white">User Management</h1>
-                <p class="mt-1 text-sm text-slate-200">View user roles and update account access levels.</p>
-            </div>
-            <a href="{{ url('/admin/dashboard') }}" class="inline-flex items-center justify-center rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 shadow-sm transition hover:bg-rose-50">
-                Back to Dashboard
-            </a>
+<div class="welcome-banner">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <h1 style="margin: 0; font-size: 26px;">User Management</h1>
+            <p style="margin: 5px 0 0 0; opacity: 0.9;">View user roles and update account access levels.</p>
         </div>
+        <a href="/admin/dashboard" class="btn" style="background: white; color: var(--sidebar-bg); padding: 10px 20px; border-radius: 10px; font-weight: 700; text-decoration: none;">
+            Back to Dashboard
+        </a>
     </div>
+</div>
 
-    <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-md">
-        <div class="overflow-x-auto">
-        <table class="min-w-full text-left">
-            <thead class="bg-slate-50 text-slate-700 text-xs uppercase tracking-wide">
-                <tr>
-                    <th class="px-4 py-3">#</th>
-                    <th class="px-4 py-3">Name</th>
-                    <th class="px-4 py-3">Email</th>
-                    <th class="px-4 py-3">Role</th>
-                    <th class="px-4 py-3">Joined</th>
-                    <th class="px-4 py-3 text-right">Action</th>
-                </tr>
-            </thead>
-
-            <tbody class="divide-y divide-slate-100 text-sm text-slate-600">
-
-                @forelse($users as $user)
-                    <tr class="hover:bg-slate-50 transition">
-                        <td class="px-4 py-3">{{ $loop->iteration }}</td>
-                        <td class="px-4 py-3 font-semibold text-slate-800">
-                            {{ $user->name }}
-                        </td>
-                        <td class="px-4 py-3">
-                            {{ $user->email }}
-                        </td>
-                        <td class="px-4 py-3">
-                            <span class="rounded-full px-2.5 py-1 text-xs font-semibold {{ $user->role == 'admin' ? 'bg-amber-100 text-amber-700' : 'bg-orange-100 text-orange-700' }}">
-                                {{ ucfirst($user->role) }}
-                            </span>
-                        </td>
-                        <td class="px-4 py-3">
-                            {{ $user->created_at ? $user->created_at->format('d M Y, h:i A') : 'N/A' }}
-                        </td>
-                        <td class="px-4 py-3 text-right">
-                            <a href="{{ url('/admin/userEdit/' . $user->id) }}"
-                                class="inline-flex items-center rounded-lg bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-700 transition hover:bg-rose-100">
-                                Edit
-                            </a>
-                        </td>
-                    </tr>
-
-                @empty
-                    <tr>
-                        <td colspan="6" class="p-10 text-center text-slate-400">
-                            No users found
-                        </td>
-                    </tr>
-                @endforelse
-
-            </tbody>
-        </table>
-        </div>
-    </div>
+<div class="data-card">
+    <table class="custom-table">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>NAME</th>
+                <th>EMAIL</th>
+                <th>ROLE</th>
+                <th>JOINED</th>
+                <th style="text-align: right;">ACTION</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach($users as $user)
+            <tr>
+                <td>{{ $loop->iteration }}</td>
+                <td style="font-weight: 700;">{{ $user->name }}</td>
+                <td style="color: #64748b;">{{ $user->email }}</td>
+                <td>
+                    <span style="background: {{ $user->role == 'admin' ? '#fff7ed' : '#fff1f2' }}; color: {{ $user->role == 'admin' ? '#c2410c' : '#e11d48' }}; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: bold;">
+                        {{ ucfirst($user->role) }}
+                    </span>
+                </td>
+                <td style="color: #94a3b8;">{{ $user->created_at->format('d M Y, h:i A') }}</td>
+                <td style="text-align: right;">
+                    <a href="{{ url('/admin/userEdit/'.$user->id) }}" style="color: #e11d48; font-weight: 600; text-decoration: none; font-size: 13px; border: 1px solid #fecaca; padding: 5px 12px; border-radius: 6px;">Edit</a>
+                </td>
+            </tr>
+            @endforeach
+        </tbody>
+    </table>
+</div>
 @endsection

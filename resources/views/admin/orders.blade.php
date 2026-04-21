@@ -1,71 +1,230 @@
 @extends('admin.layout')
-
 @section('title', 'Orders')
-@section('header_title', 'Orders')
 
 @section('content')
-    <div class="mb-6 rounded-2xl border border-red-200 bg-gradient-to-r from-red-600 via-rose-600 to-orange-500 p-6 shadow-lg">
-        <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div>
-                <h1 class="text-2xl font-semibold text-white">Orders</h1>
-                <p class="mt-1 text-sm text-slate-200">Track customer orders and update fulfillment status.</p>
+    <div class="order-index-container">
+        <div class="order-header-banner">
+            <div class="header-text">
+                <h1 class="header-title">Order Management</h1>
+                <p class="header-subtitle">Track customer orders and update fulfillment status.</p>
             </div>
-            <a href="{{ url('/admin/dashboard') }}" class="inline-flex items-center justify-center rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 shadow-sm transition hover:bg-rose-50">
-                Back to Dashboard
-            </a>
         </div>
-    </div>
 
-    @if(session('success'))
-        <div class="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700 shadow-sm">
-            {{ session('success') }}
-        </div>
-    @endif
-
-    <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-md">
-        <div class="overflow-x-auto">
-            <table class="min-w-full text-left">
-                <thead class="bg-slate-50 text-xs uppercase tracking-wide text-slate-700">
-                    <tr>
-                        <th class="px-4 py-3">Order ID</th>
-                        <th class="px-4 py-3">Customer</th>
-                        <th class="px-4 py-3">Amount</th>
-                        <th class="px-4 py-3">Status</th>
-                        <th class="px-4 py-3">Date</th>
-                        <th class="px-4 py-3 text-right">Action</th>
-                    </tr>
-                </thead>
-
-                <tbody class="divide-y divide-slate-100 text-sm text-slate-600">
-                    @forelse($orders as $order)
-                        <tr class="transition hover:bg-slate-50">
-                            <td class="px-4 py-3 font-semibold text-slate-800">#{{ $order->id }}</td>
-                            <td class="px-4 py-3">{{ $order->user->name ?? 'Guest' }}</td>
-                            <td class="px-4 py-3 font-semibold text-emerald-600">Rs {{ number_format($order->total_amount, 2) }}</td>
-                            <td class="px-4 py-3">
-                                <span class="rounded-full px-2.5 py-1 text-xs font-semibold
-                                    {{ $order->status === 'pending' ? 'bg-amber-100 text-amber-700' : '' }}
-                                    {{ $order->status === 'cancelled' ? 'bg-rose-100 text-rose-700' : '' }}
-                                    {{ $order->status === 'delivered' ? 'bg-emerald-100 text-emerald-700' : '' }}
-                                    {{ $order->status === 'processing' ? 'bg-orange-100 text-orange-700' : '' }}">
-                                    {{ ucfirst($order->status) }}
-                                </span>
-                            </td>
-                            <td class="px-4 py-3">{{ optional($order->created_at)->format('d M Y') ?? 'N/A' }}</td>
-                            <td class="px-4 py-3 text-right">
-                                <a href="{{ url('/admin/viewOrder/' . $order->id) }}"
-                                    class="inline-flex items-center rounded-lg bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-700 transition hover:bg-rose-100">
-                                    View Details
-                                </a>
-                            </td>
-                        </tr>
-                    @empty
+        <div class="table-card">
+            <div class="table-responsive">
+                <table class="custom-admin-table">
+                    <thead>
                         <tr>
-                            <td colspan="6" class="p-10 text-center text-slate-400">No orders found.</td>
+                            <th>Order ID</th>
+                            <th>Customer</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                            <th>Date</th>
+                            <th class="text-right">Action</th>
                         </tr>
-                    @endforelse
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        @forelse($orders as $order)
+                            <tr>
+                                <td class="order-id">#{{ $order->id }}</td>
+                                <td>
+                                    <div class="customer-name">{{ $order->user->name ?? 'Guest' }}</div>
+                                    <div class="customer-phone">{{ $order->phone }}</div>
+                                </td>
+                                <td class="order-amount">Rs {{ number_format($order->total_amount, 2) }}</td>
+                                <td>
+                                    <span class="status-badge status-{{ $order->status }}">
+                                        {{ strtoupper($order->status) }}
+                                    </span>
+                                </td>
+                                <td class="order-date">{{ $order->created_at->format('d M, h:i A') }}</td>
+                                <td class="text-right">
+                                    <a href="{{ url('/admin/viewOrder/' . $order->id) }}" class="btn-view">
+                                        View Details
+                                    </a>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="6" class="empty-state">
+                                    <div class="empty-icon">🛒</div>
+                                    <p>No orders found in the database.</p>
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 @endsection
+
+@push('styles')
+    <style>
+        /* Container Styling */
+        .order-index-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding-bottom: 3rem;
+        }
+
+        /* Gradient Header */
+        .order-header-banner {
+            background: linear-gradient(135deg, #e11d48 0%, #fb923c 100%);
+            padding: 2rem;
+            border-radius: 1rem 1rem 0 0;
+            color: white;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .header-title {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .header-subtitle {
+            margin: 5px 0 0 0;
+            opacity: 0.9;
+            font-size: 0.9rem;
+        }
+
+        /* Table Card Styling */
+        .table-card {
+            background: white;
+            border-radius: 0 0 1rem 1rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+            border: 1px solid #f1f5f9;
+            border-top: none;
+            overflow: hidden;
+        }
+
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        .custom-admin-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        .custom-admin-table thead th {
+            background-color: #f8fafc;
+            padding: 1rem 1.5rem;
+            color: #64748b;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.025em;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .custom-admin-table tbody tr {
+            border-bottom: 1px solid #f1f5f9;
+            transition: background-color 0.2s;
+        }
+
+        .custom-admin-table tbody tr:hover {
+            background-color: #fcfcfc;
+        }
+
+        .custom-admin-table tbody td {
+            padding: 1rem 1.5rem;
+            vertical-align: middle;
+            font-size: 0.9rem;
+        }
+
+        /* Specific Column Styles */
+        .order-id {
+            font-weight: 700;
+            color: #1e293b;
+        }
+
+        .customer-name {
+            font-weight: 700;
+            color: #1e293b;
+        }
+
+        .customer-phone {
+            font-size: 0.8rem;
+            color: #94a3b8;
+        }
+
+        .order-amount {
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        .order-date {
+            color: #64748b;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        /* Status Badges */
+        .status-badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 800;
+            letter-spacing: 0.05em;
+        }
+
+        .status-pending {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-success {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-completed {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-cancelled {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+
+        /* Action Button */
+        .btn-view {
+            background-color: #1e293b;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: 600;
+            text-decoration: none;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+            display: inline-block;
+        }
+
+        .btn-view:hover {
+            background-color: #0f172a;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Empty State */
+        .empty-state {
+            padding: 5rem 0 !important;
+            text-align: center;
+            color: #94a3b8;
+        }
+
+        .empty-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.4;
+        }
+    </style>
+@endpush
